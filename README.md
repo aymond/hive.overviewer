@@ -1,6 +1,6 @@
 # Python Web Application
 
-A modern web application built with Python.
+A modern web application built with Python and Flask.
 
 ## Project Structure
 
@@ -42,6 +42,15 @@ A modern web application built with Python.
 └── run.py                  # Application entry point
 ```
 
+## Features
+
+- User authentication (login/register)
+- Google OAuth integration
+- Responsive design with Bootstrap
+- Database integration with SQLAlchemy
+- CSRF protection
+- Modular structure with Blueprints
+
 ## Setup
 
 1. Clone this repository
@@ -54,8 +63,18 @@ A modern web application built with Python.
    ```
    pip install -r requirements.txt
    ```
-4. Copy `.env.example` to `.env` and update the variables
-5. Run the application:
+4. Copy `.env.example` to `.env` and update the variables:
+   ```
+   cp .env.example .env
+   ```
+5. Set up Google OAuth (optional):
+   - Follow the instructions in `docs/google_oauth_setup.md`
+   - Update the Google OAuth client ID and secret in your `.env` file
+6. Initialize the database:
+   ```
+   python -c "from app import db, create_app; app = create_app(); app.app_context().push(); db.create_all()"
+   ```
+7. Run the application:
    ```
    python run.py
    ```
@@ -66,3 +85,12 @@ A modern web application built with Python.
 - Add your route handlers in `app/controllers/`
 - Add your HTML templates in `app/templates/`
 - Add your static files in `app/static/`
+
+## Authentication
+
+The application supports two authentication methods:
+
+1. **Traditional email/password authentication**
+2. **Google OAuth authentication**
+
+Users can register and log in using either method. If a user signs in with Google and their email already exists in the system, their account will be linked to their Google ID for future sign-ins.

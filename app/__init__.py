@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
 
@@ -10,6 +12,8 @@ load_dotenv()
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
+csrf = CSRFProtect()
+migrate = Migrate()
 
 def create_app(config_class=None):
     # Create and configure the app
@@ -23,15 +27,20 @@ def create_app(config_class=None):
     
     # Initialize extensions with the app
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
+    csrf.init_app(app)
     login_manager.login_view = 'auth.login'
     
     # Import and register blueprints
     from app.controllers.main import main_bp
     from app.controllers.auth import auth_bp
+    from app.controllers.google_auth import google_auth_bp, google_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(google_auth_bp, url_prefix='/auth')
+    app.register_blueprint(google_bp, url_prefix='/login')
     
     # Import models to ensure user_loader is registered
     from app.models import user
