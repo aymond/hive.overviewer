@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title h5 mb-0">Add New Host</h2>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('hosts.new') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Host Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="Enter a name for this host">
+                            <div class="form-text">A descriptive name to identify this host.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" required 
+                                   placeholder="IP address or hostname">
+                            <div class="form-text">IP address or hostname of the server.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="port" class="form-label">SSH Port</label>
+                            <input type="number" class="form-control" id="port" name="port" value="22" min="1" max="65535">
+                            <div class="form-text">SSH port for remote management (default: 22).</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                     placeholder="Enter a description for this host"></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('hosts.index') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Host</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

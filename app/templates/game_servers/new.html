@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.index') }}">Hosts</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.show', id=host.id) }}">{{ host.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add Game Server</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">Add New Game Server</h1>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('game_servers.create', host_id=host.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Hidden Host ID -->
+                        <input type="hidden" name="host_id" value="{{ host.id }}">
+                        
+                        <!-- Server Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Server Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="form-text">A descriptive name for your game server</div>
+                        </div>
+
+                        <!-- Game Type -->
+                        <div class="mb-3">
+                            <label for="game_type" class="form-label">Game Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="game_type" name="game_type" required>
+                                <option value="" selected>Select a game...</option>
+                                <option value="minecraft">Minecraft</option>
+                                <option value="minecraft_bedrock">Minecraft Bedrock</option>
+                                <option value="terraria">Terraria</option>
+                                <option value="valheim">Valheim</option>
+                                <option value="rust">Rust</option>
+                                <option value="factorio">Factorio</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="form-text">The type of game server software</div>
+                        </div>
+
+                        <!-- Other Game Type (conditional) -->
+                        <div class="mb-3" id="otherGameTypeField" style="display: none;">
+                            <label for="other_game_type" class="form-label">Specify Game Type <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="other_game_type" name="other_game_type">
+                            <div class="form-text">Enter the specific game type for your server</div>
+                        </div>
+
+                        <!-- Server Port -->
+                        <div class="mb-3">
+                            <label for="server_port" class="form-label">Server Port <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="server_port" name="server_port" min="1" max="65535" required>
+                            <div class="form-text">The main port for the game server (e.g., 25565 for Minecraft)</div>
+                        </div>
+
+                        <!-- Query Port (Optional) -->
+                        <div class="mb-3">
+                            <label for="query_port" class="form-label">Query Port</label>
+                            <input type="number" class="form-control" id="query_port" name="query_port" min="1" max="65535">
+                            <div class="form-text">Optional: The port used for server queries if different from the main port</div>
+                        </div>
+
+                        <!-- Max Players -->
+                        <div class="mb-3">
+                            <label for="max_players" class="form-label">Max Players <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="max_players" name="max_players" min="1" max="1000" value="20" required>
+                            <div class="form-text">Maximum number of players allowed on the server</div>
+                        </div>
+
+                        <!-- Install Path -->
+                        <div class="mb-3">
+                            <label for="install_path" class="form-label">Install Path</label>
+                            <input type="text" class="form-control" id="install_path" name="install_path">
+                            <div class="form-text">The directory path where the server will be installed on the host</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <div class="form-text">Optional: A description of this game server</div>
+                        </div>
+
+                        <!-- Auto Start -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="auto_start" name="auto_start" value="1">
+                            <label class="form-check-label" for="auto_start">Start server automatically with host</label>
+                            <div class="form-text">Enable to automatically start this server when the host starts</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('hosts.show', id=host.id) }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success">Add Server</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default port based on game type
+        const gameTypeSelect = document.getElementById('game_type');
+        const serverPortInput = document.getElementById('server_port');
+        const queryPortInput = document.getElementById('query_port');
+        const otherGameTypeField = document.getElementById('otherGameTypeField');
+        const otherGameTypeInput = document.getElementById('other_game_type');
+        
+        // Default ports for common game types
+        const defaultPorts = {
+            'minecraft': 25565,
+            'minecraft_bedrock': 19132,
+            'terraria': 7777,
+            'valheim': 2456,
+            'rust': 28015,
+            'factorio': 34197
+        };
+        
+        // Set default query ports (if different from main port)
+        const defaultQueryPorts = {
+            'minecraft': 25565, // Same as server port
+            'minecraft_bedrock': 19132, // Same as server port
+            'rust': 28016, // Rust uses server port + 1 for query
+            'valheim': 2457  // Valheim uses server port + 1 for query
+        };
+        
+        gameTypeSelect.addEventListener('change', function() {
+            const selectedGame = this.value;
+            
+            // Set default port if known
+            if (defaultPorts[selectedGame]) {
+                serverPortInput.value = defaultPorts[selectedGame];
+            } else {
+                serverPortInput.value = '';
+            }
+            
+            // Set default query port if known
+            if (defaultQueryPorts[selectedGame]) {
+                queryPortInput.value = defaultQueryPorts[selectedGame];
+            } else {
+                queryPortInput.value = '';
+            }
+            
+            // Show/hide "Other Game Type" field
+            if (selectedGame === 'other') {
+                otherGameTypeField.style.display = 'block';
+                otherGameTypeInput.required = true;
+            } else {
+                otherGameTypeField.style.display = 'none';
+                otherGameTypeInput.required = false;
+                otherGameTypeInput.value = '';
+            }
+        });
+    });
+</script>
+{% endblock %} 

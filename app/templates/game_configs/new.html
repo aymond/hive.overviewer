@@ -1,0 +1,391 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.index') }}">Hosts</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.show', id=host.id) }}">{{ host.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('game_servers.show', id=game_server.id) }}">{{ game_server.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add Configuration</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">Add New Configuration File</h1>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('game_configs.create', server_id=game_server.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Hidden Server ID -->
+                        <input type="hidden" name="server_id" value="{{ game_server.id }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <!-- Configuration Name -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <div class="form-text">A descriptive name for this configuration</div>
+                                </div>
+                            
+                                <!-- File Path -->
+                                <div class="mb-3">
+                                    <label for="file_path" class="form-label">File Path <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="file_path" name="file_path" required>
+                                    <div class="form-text">The path where this file should be saved on the server (relative to server directory)</div>
+                                </div>
+                            
+                                <!-- File Type -->
+                                <div class="mb-3">
+                                    <label for="file_type" class="form-label">File Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="file_type" name="file_type" required>
+                                        <option value="" selected>Select a file type...</option>
+                                        <option value="properties">Properties (.properties)</option>
+                                        <option value="config">Configuration (.cfg, .conf, .config)</option>
+                                        <option value="yml">YAML (.yml, .yaml)</option>
+                                        <option value="json">JSON (.json)</option>
+                                        <option value="xml">XML (.xml)</option>
+                                        <option value="ini">INI (.ini)</option>
+                                        <option value="txt">Text (.txt)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <div class="form-text">The type/format of the configuration file</div>
+                                </div>
+                                
+                                <!-- Other File Type (conditional) -->
+                                <div class="mb-3" id="otherFileTypeField" style="display: none;">
+                                    <label for="other_file_type" class="form-label">Specify File Type <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="other_file_type" name="other_file_type">
+                                    <div class="form-text">Enter the specific file type/extension</div>
+                                </div>
+                                
+                                <!-- Is Active -->
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" checked>
+                                    <label class="form-check-label" for="is_active">Active</label>
+                                    <div class="form-text">Enable to mark this as the active configuration for deployment</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- Description -->
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    <div class="form-text">Optional: A description of this configuration</div>
+                                </div>
+                                
+                                <!-- Common Templates (if any) -->
+                                <div class="mb-3">
+                                    <label for="template" class="form-label">Use Template</label>
+                                    <select class="form-select" id="template" name="template">
+                                        <option value="" selected>Choose a template (optional)...</option>
+                                        <option value="minecraft_server_properties">Minecraft server.properties</option>
+                                        <option value="minecraft_bukkit_config">Bukkit config.yml</option>
+                                        <option value="minecraft_spigot_config">Spigot spigot.yml</option>
+                                        <option value="valheim_server_config">Valheim server configuration</option>
+                                        <option value="terraria_server_config">Terraria server configuration</option>
+                                    </select>
+                                    <div class="form-text">Optionally select a pre-configured template to start with</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuration Content -->
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <div class="form-text mb-2">Enter the content of your configuration file</div>
+                            <textarea class="form-control font-monospace" id="content" name="content" rows="15" style="resize: vertical;" required></textarea>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('game_servers.show', id=game_server.id) }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success">Add Configuration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide "Other File Type" field based on selection
+        const fileTypeSelect = document.getElementById('file_type');
+        const otherFileTypeField = document.getElementById('otherFileTypeField');
+        const otherFileTypeInput = document.getElementById('other_file_type');
+        
+        fileTypeSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherFileTypeField.style.display = 'block';
+                otherFileTypeInput.required = true;
+            } else {
+                otherFileTypeField.style.display = 'none';
+                otherFileTypeInput.required = false;
+                otherFileTypeInput.value = '';
+            }
+        });
+        
+        // Template selection handler
+        const templateSelect = document.getElementById('template');
+        const contentTextarea = document.getElementById('content');
+        
+        // Templates for different game configs
+        const templates = {
+            'minecraft_server_properties': 
+`# Minecraft server properties
+# Generated on ${new Date().toISOString().split('T')[0]}
+allow-flight=false
+allow-nether=true
+difficulty=easy
+enable-command-block=false
+enable-rcon=false
+enforce-whitelist=false
+gamemode=survival
+generate-structures=true
+hardcore=false
+level-name=world
+level-seed=
+level-type=default
+max-players=${document.getElementById('max_players')?.value || 20}
+motd=A Minecraft Server
+online-mode=true
+pvp=true
+server-ip=
+server-port=${document.getElementById('server_port')?.value || 25565}
+spawn-animals=true
+spawn-monsters=true
+spawn-npcs=true
+view-distance=10
+white-list=false`,
+
+            'minecraft_bukkit_config': 
+`# Bukkit configuration file
+# Generated on ${new Date().toISOString().split('T')[0]}
+settings:
+  allow-end: true
+  warn-on-overload: true
+  permissions-file: permissions.yml
+  update-folder: update
+  plugin-profiling: false
+  connection-throttle: 4000
+  query-plugins: true
+  deprecated-verbose: default
+  shutdown-message: Server closed
+  minimum-api: none
+spawn-limits:
+  monsters: 70
+  animals: 15
+  water-animals: 5
+  water-ambient: 20
+  ambient: 15
+chunk-gc:
+  period-in-ticks: 600
+ticks-per:
+  animal-spawns: 400
+  monster-spawns: 1
+  water-spawns: 1
+  water-ambient-spawns: 1
+  ambient-spawns: 1
+  autosave: 6000
+aliases: now-in-commands.yml`,
+
+            'minecraft_spigot_config': 
+`# Spigot configuration file
+# Generated on ${new Date().toISOString().split('T')[0]}
+config-version: 12
+settings:
+  debug: false
+  bungeecord: false
+  sample-count: 12
+  player-shuffle: 0
+  user-cache-size: 1000
+  save-user-cache-on-stop-only: false
+  moved-wrongly-threshold: 0.0625
+  moved-too-quickly-multiplier: 10.0
+  timeout-time: 60
+  restart-on-crash: true
+  restart-script: ./start.sh
+  netty-threads: 4
+  attribute:
+    maxHealth:
+      max: 2048.0
+    movementSpeed:
+      max: 2048.0
+    attackDamage:
+      max: 2048.0
+messages:
+  whitelist: You are not whitelisted on this server!
+  unknown-command: Unknown command. Type "/help" for help.
+  server-full: The server is full!
+  outdated-client: Outdated client! Please use {0}
+  outdated-server: Outdated server! I'm still on {0}
+  restart: Server is restarting
+advancements:
+  disable-saving: false
+  disabled:
+  - minecraft:story/disabled
+commands:
+  log: true
+  tab-complete: 0
+  send-namespaced: true
+  spam-exclusions:
+  - /skill
+  silent-commandblock-console: false
+  replace-commands:
+  - setblock
+  - summon
+  - testforblock
+  - tellraw
+players:
+  disable-saving: false
+world-settings:
+  default:
+    verbose: true
+    entity-activation-range:
+      animals: 32
+      monsters: 32
+      raiders: 48
+      misc: 16
+      water: 16
+      villagers: 32
+      flying-monsters: 32
+    merge-radius:
+      item: 2.5
+      exp: 3.0
+    item-despawn-rate: 6000
+    view-distance: default
+    keep-spawn-loaded: true
+    mob-spawn-range: 6
+    entity-tracking-range:
+      players: 48
+      animals: 48
+      monsters: 48
+      misc: 32
+      other: 64
+    growth:
+      cactus-modifier: 100
+      cane-modifier: 100
+      melon-modifier: 100
+      mushroom-modifier: 100
+      pumpkin-modifier: 100
+      sapling-modifier: 100
+      beetroot-modifier: 100
+      carrot-modifier: 100
+      potato-modifier: 100
+      wheat-modifier: 100
+      netherwart-modifier: 100
+      vine-modifier: 100
+      cocoa-modifier: 100
+      bamboo-modifier: 100
+      sweetberry-modifier: 100
+      kelp-modifier: 100
+    ticks-per:
+      hopper-transfer: 8
+      hopper-check: 1
+    hopper-amount: 1
+    dragon-death-sound-radius: 0
+    seed-village: 10387312
+    seed-desert: 14357617
+    seed-igloo: 14357618
+    seed-jungle: 14357619
+    seed-swamp: 14357620
+    seed-monument: 10387313
+    seed-shipwreck: 165745295
+    seed-ocean: 14357621
+    seed-outpost: 165745296
+    seed-endcity: 10387313
+    seed-slime: 987234911
+    seed-bastion: 30084232
+    seed-fortress: 30084232
+    seed-mansion: 10387319
+    seed-fossil: 14357921
+    seed-portal: 34222645
+    hunger:
+      jump-walk-exhaustion: 0.05
+      jump-sprint-exhaustion: 0.2
+      combat-exhaustion: 0.1
+      regen-exhaustion: 6.0
+      swim-multiplier: 0.01
+      sprint-multiplier: 0.1
+      other-multiplier: 0.0
+    max-tnt-per-tick: 100
+    enable-treasure-maps: true
+    treasure-maps-return-already-discovered: false
+    wither-spawn-sound-radius: 0
+    arrow-despawn-rate: 1200
+    trident-despawn-rate: 1200
+    zombie-aggressive-towards-villager: true
+    nerf-spawner-mobs: false
+    hanging-tick-frequency: 100
+    despawn-ranges:
+      soft: 32
+      hard: 128
+    lightning-strike-distance: 128.0
+    simulation-distance: default`,
+
+            'valheim_server_config': 
+`# Valheim server configuration
+# Generated on ${new Date().toISOString().split('T')[0]}
+[Server]
+name=My Valheim Server
+port=${document.getElementById('server_port')?.value || 2456}
+password=changeme
+public=true
+
+[Game]
+worldname=MyWorld
+seed=
+difficulty=1
+pvp=false
+nopvpdamage=false
+noplayerdrop=false
+nodisconnectloot=false
+creativemode=false
+communityserver=false
+sharemap=true`,
+
+            'terraria_server_config': 
+`# Terraria server configuration
+# Generated on ${new Date().toISOString().split('T')[0]}
+world=/worlds/MyWorld.wld
+autocreate=3
+seed=
+worldname=MyTerraria
+difficulty=0
+maxplayers=${document.getElementById('max_players')?.value || 16}
+port=${document.getElementById('server_port')?.value || 7777}
+password=
+motd=Welcome to my Terraria server!
+secure=1
+banlist=banlist.txt
+language=en-US
+upnp=0
+npcstream=60
+priority=1`
+        };
+        
+        templateSelect.addEventListener('change', function() {
+            const selectedTemplate = this.value;
+            if (templates[selectedTemplate]) {
+                if (contentTextarea.value && contentTextarea.value.trim() !== '') {
+                    if (confirm('This will replace your current content. Are you sure?')) {
+                        contentTextarea.value = templates[selectedTemplate];
+                    }
+                } else {
+                    contentTextarea.value = templates[selectedTemplate];
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

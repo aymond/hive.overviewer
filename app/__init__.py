@@ -55,11 +55,17 @@ def create_app(config_class=None):
     from app.controllers.main import main_bp
     from app.controllers.auth import auth_bp
     from app.controllers.google_auth import google_auth_bp, google_bp
+    from app.controllers.hosts import hosts_bp
+    from app.controllers.game_servers import game_servers_bp
+    from app.controllers.game_configs import game_configs_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(google_auth_bp, url_prefix='/auth')
     app.register_blueprint(google_bp, url_prefix='/login')
+    app.register_blueprint(hosts_bp)
+    app.register_blueprint(game_servers_bp)
+    app.register_blueprint(game_configs_bp)
     
     # Setup user loader
     from app.models.user import User

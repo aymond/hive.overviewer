@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.index') }}">Hosts</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.show', id=game_server.host_id) }}">{{ game_server.host.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('game_servers.show', id=game_server.id) }}">{{ game_server.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('game_configs.show', id=config.id) }}">{{ config.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">Edit Configuration</h1>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('game_configs.update', id=config.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Config Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Configuration Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ config.name }}" required>
+                            <div class="form-text">A descriptive name for this configuration</div>
+                        </div>
+
+                        <!-- Config File Path -->
+                        <div class="mb-3">
+                            <label for="file_path" class="form-label">Configuration File Path <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="file_path" name="file_path" value="{{ config.file_path }}" required>
+                            <div class="form-text">Path to the configuration file on the server (relative to the game server's install path)</div>
+                        </div>
+
+                        <!-- Config Content -->
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Configuration Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control font-monospace" id="content" name="content" rows="15" required>{{ config.content }}</textarea>
+                            <div class="form-text">The content of the configuration file</div>
+                        </div>
+
+                        <!-- Config Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ config.description or '' }}</textarea>
+                            <div class="form-text">Optional: A description of this configuration file</div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {{ 'checked' if config.is_active else '' }}>
+                            <label class="form-check-label" for="is_active">Active Configuration</label>
+                            <div class="form-text">When active, this configuration will be used when deploying to the server</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('game_configs.show', id=config.id) }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Configuration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Could add code highlighting or a text editor for the configuration content here
+    // For example, using CodeMirror or Monaco Editor
+</script>
+{% endblock %} 

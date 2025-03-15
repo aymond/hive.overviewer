@@ -21,5 +21,23 @@ def drop_tables():
     db.drop_all()
     print("Dropped all database tables.")
 
+@app.cli.command("create-test-user")
+def create_test_user():
+    """Create a test user for development."""
+    username = "testuser"
+    email = "test@example.com"
+    password = "password123"
+    
+    # Check if user already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        print(f"Test user '{username}' already exists")
+        return
+    
+    user = User(username=username, email=email, password=password)
+    db.session.add(user)
+    db.session.commit()
+    print(f"Created test user: {username} with password: {password}")
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

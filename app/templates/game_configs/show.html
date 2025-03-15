@@ -1,0 +1,321 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .config-content {
+        font-family: monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .config-meta {
+        border-left: 3px solid #6c757d;
+        padding-left: 1rem;
+    }
+    .badge-version {
+        font-size: 0.8rem;
+        font-weight: normal;
+    }
+    .diff-added {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .diff-removed {
+        background-color: #f8d7da;
+        color: #721c24;
+        text-decoration: line-through;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.index') }}">Hosts</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('hosts.show', id=host.id) }}">{{ host.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('game_servers.show', id=game_server.id) }}">{{ game_server.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ config.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Configuration Content Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-0">
+                            <i class="bi bi-gear"></i> {{ config.name }}
+                            <span class="badge bg-{{ 'success' if config.is_active else 'secondary' }}">
+                                {{ 'Active' if config.is_active else 'Inactive' }}
+                            </span>
+                        </h1>
+                        <small class="text-muted">{{ config.file_path }}</small>
+                    </div>
+                    <div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('game_configs.edit', id=config.id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                {% if config.is_active %}
+                                <li>
+                                    <form action="{{ url_for('game_configs.deploy', id=config.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-cloud-upload"></i> Deploy to Server
+                                        </button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ url_for('game_configs.toggle_active', id=config.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-x-circle"></i> Mark as Inactive
+                                        </button>
+                                    </form>
+                                </li>
+                                {% else %}
+                                <li>
+                                    <form action="{{ url_for('game_configs.toggle_active', id=config.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-check-circle"></i> Mark as Active
+                                        </button>
+                                    </form>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button type="button" class="dropdown-item" id="downloadBtn">
+                                        <i class="bi bi-download"></i> Download File
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteConfigModal">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if config.description %}
+                    <div class="mb-3">
+                        <p>{{ config.description }}</p>
+                    </div>
+                    <hr>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Content</label>
+                        <div class="config-content">{{ config.content }}</div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="d-flex justify-content-between">
+                        <span>
+                            <i class="bi bi-clock"></i> Last modified: {{ config.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        <span>
+                            <i class="bi bi-file-earmark-text"></i> Type: {{ config.file_type }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Metadata Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Details</h2>
+                </div>
+                <div class="card-body">
+                    <div class="config-meta mb-3">
+                        <p class="mb-1"><strong>Game Server:</strong> <a href="{{ url_for('game_servers.show', id=game_server.id) }}">{{ game_server.name }}</a></p>
+                        <p class="mb-1"><strong>Host:</strong> <a href="{{ url_for('hosts.show', id=host.id) }}">{{ host.name }}</a></p>
+                        <p class="mb-1"><strong>Created:</strong> {{ config.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p class="mb-1"><strong>File Type:</strong> {{ config.other_file_type or config.file_type }}</p>
+                        <p class="mb-0"><strong>Status:</strong> 
+                            <span class="badge bg-{{ 'success' if config.is_active else 'secondary' }}">
+                                {{ 'Active' if config.is_active else 'Inactive' }}
+                            </span>
+                        </p>
+                    </div>
+                    
+                    {% if config.is_active %}
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> This is the active configuration for deployment.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> This configuration is inactive and won't be deployed.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Version History Card -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Version History</h2>
+                </div>
+                <div class="card-body">
+                    {% if versions %}
+                    <ul class="list-group">
+                        {% for version in versions %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-version bg-secondary">v{{ version.version_number }}</span>
+                                    {{ version.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary view-version-btn" data-version-id="{{ version.id }}">View</button>
+                            </div>
+                            {% if version.note %}
+                            <small class="d-block text-muted mt-1">{{ version.note }}</small>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No version history available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Config Modal -->
+    <div class="modal fade" id="deleteConfigModal" tabindex="-1" aria-labelledby="deleteConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfigModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the configuration <strong>{{ config.name }}</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('game_configs.delete', id=config.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Version History Modal -->
+    <div class="modal fade" id="versionHistoryModal" tabindex="-1" aria-labelledby="versionHistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="versionHistoryModalLabel">Version Comparison</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="versionComparisonContent">
+                        <!-- Will be populated by JavaScript -->
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading version comparison...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="restoreVersionBtn">Restore This Version</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Download configuration file
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const content = {{ config.content|tojson }};
+            const name = {{ config.name|tojson }};
+            const filePath = {{ config.file_path|tojson }};
+            
+            // Get the filename from the file path
+            const filePathParts = filePath.split('/');
+            const fileName = filePathParts[filePathParts.length - 1];
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // View version history
+        const viewVersionBtns = document.querySelectorAll('.view-version-btn');
+        const versionHistoryModal = document.getElementById('versionHistoryModal');
+        const versionComparisonContent = document.getElementById('versionComparisonContent');
+        const restoreVersionBtn = document.getElementById('restoreVersionBtn');
+        let currentVersionId = null;
+        
+        viewVersionBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const versionId = this.getAttribute('data-version-id');
+                currentVersionId = versionId;
+                
+                // Show the modal with loading indicator
+                const versionModal = new bootstrap.Modal(versionHistoryModal);
+                versionModal.show();
+                
+                // Fetch the version comparison (would be an actual AJAX call in production)
+                // For demo, we'll just simulate it
+                setTimeout(() => {
+                    // This is just a placeholder - the actual implementation would fetch
+                    // the version from the server and show a proper diff
+                    versionComparisonContent.innerHTML = `
+                        <h6>Comparison with current version</h6>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            This is a simulated diff. In a real application, this would show 
+                            the actual differences between versions.
+                        </div>
+                        <div class="config-content">
+                            <div class="diff-removed">- old line removed</div>
+                            <div>  unchanged line</div>
+                            <div class="diff-added">+ new line added</div>
+                        </div>
+                    `;
+                }, 500);
+            });
+        });
+        
+        // Restore version button
+        restoreVersionBtn.addEventListener('click', function() {
+            if (currentVersionId && confirm('Are you sure you want to restore this version? This will overwrite the current version.')) {
+                // This would be an actual form submission in production
+                alert('Version restore feature would be implemented here');
+                // Close the modal
+                bootstrap.Modal.getInstance(versionHistoryModal).hide();
+            }
+        });
+    });
+</script>
+{% endblock %} 
