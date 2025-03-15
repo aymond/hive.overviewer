@@ -33,10 +33,12 @@ venv.bak/
 # Flask stuff:
 instance/
 .webassets-cache
+flask_session/
 
 # Database
 *.db
 *.sqlite3
+app.db
 
 # IDE specific files
 .idea/
@@ -47,3 +49,20 @@ instance/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Migration versions
+migrations/versions/
+
+# OAuth tokens and secrets
+oauth_tokens/
+client_secrets.json
+
+# User uploads
+uploads/
+
+# Flask sessions
+flask_session/

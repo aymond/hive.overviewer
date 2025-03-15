@@ -1,4 +1,4 @@
-from app import db, login_manager
+from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -70,10 +70,4 @@ class User(UserMixin, db.Model):
         self.preferences = json.dumps(current_prefs)
     
     def __repr__(self):
-        return f'<User {self.username}>'
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    """Load user by ID."""
-    return User.query.get(int(user_id)) 
+        return f'<User {self.username}>' 
