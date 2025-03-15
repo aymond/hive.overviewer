@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h1 class="mb-4">About Our Application</h1>
+        <p class="lead">This is a modern web application built with Python and Flask.</p>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Technologies Used</h2>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Backend:</strong> Flask, SQLAlchemy</li>
+                    <li><strong>Frontend:</strong> Bootstrap, Jinja2</li>
+                    <li><strong>Database:</strong> SQLite (development), PostgreSQL (production)</li>
+                    <li><strong>Authentication:</strong> Flask-Login</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Features</h2>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>User Authentication (Login/Register)</li>
+                    <li>Responsive Design</li>
+                    <li>Database Integration</li>
+                    <li>Modular Structure</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Contact</h2>
+            </div>
+            <div class="card-body">
+                <p>If you have any questions or suggestions, please feel free to contact us at:</p>
+                <p><a href="mailto:contact@example.com">contact@example.com</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
