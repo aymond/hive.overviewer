@@ -132,21 +132,29 @@ def update_status(id):
 @login_required
 def check_host_status(id):
     """Check the actual status of a host."""
-    host = Host.query.get_or_404(id)
-    
-    # Security check - only allow access to own hosts
-    if host.user_id != current_user.id:
-        return jsonify({'success': False, 'message': 'Permission denied'}), 403
-    
     try:
-        is_online = host.check_status()
+        host = Host.query.get_or_404(id)
+        
+        # Security check - only allow access to own hosts
+        if host.user_id != current_user.id:
+            return jsonify({
+                'success': False,
+                'message': 'Permission denied'
+            }), 403
+        
+        is_online, message = host.check_status()
         db.session.commit()
+        
         return jsonify({
             'success': True,
             'status': host.status,
-            'message': host.status_message,
+            'message': message,
             'is_online': is_online
         })
+        
     except Exception as e:
         current_app.logger.error(f"Error checking host status: {str(e)}")
-        return jsonify({'success': False, 'message': 'An error occurred while checking host status'}), 500 
+        return jsonify({
+            'success': False,
+            'message': f"Error checking host status: {str(e)}"
+        }), 400 

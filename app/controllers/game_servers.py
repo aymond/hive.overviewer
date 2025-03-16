@@ -287,4 +287,204 @@ def check_status(id):
         })
     except Exception as e:
         current_app.logger.error(f"Error checking game server status: {str(e)}")
-        return jsonify({'success': False, 'message': 'An error occurred while checking server status'}), 500 
+        return jsonify({'success': False, 'message': 'An error occurred while checking server status'}), 500
+
+@game_servers_bp.route('/hosts/<int:host_id>/servers/docker', methods=['POST'])
+@login_required
+def create_from_docker(host_id):
+    """Create a new game server from a Docker Compose file."""
+    host = Host.query.get_or_404(host_id)
+    
+    # Security check - only allow access to own hosts
+    if host.user_id != current_user.id:
+        flash('You do not have permission to add game servers to this host.', 'danger')
+        return redirect(url_for('hosts.index'))
+    
+    try:
+        name = request.form.get('name')
+        server_port = request.form.get('server_port', type=int)
+        max_players = request.form.get('max_players', type=int)
+        auto_start = bool(request.form.get('auto_start'))
+        config_method = request.form.get('config_method')
+        
+        if not name or not server_port or not max_players:
+            flash('Name, server port, and max players are required!', 'danger')
+            return redirect(url_for('hosts.show', id=host.id))
+        
+        # Get Docker Compose content based on method
+        if config_method == 'upload':
+            # Handle Docker Compose file upload
+            if 'docker_compose' not in request.files:
+                flash('Docker Compose file is required when using upload method!', 'danger')
+                return redirect(url_for('hosts.show', id=host.id))
+                
+            docker_compose_file = request.files['docker_compose']
+            if docker_compose_file.filename == '':
+                flash('No selected file!', 'danger')
+                return redirect(url_for('hosts.show', id=host.id))
+                
+            # Read and validate docker-compose file
+            docker_compose_content = docker_compose_file.read().decode('utf-8')
+        else:
+            # Handle generated configuration
+            docker_compose_content = request.form.get('generated_docker_compose')
+            if not docker_compose_content:
+                flash('Docker Compose configuration is required!', 'danger')
+                return redirect(url_for('hosts.show', id=host.id))
+        
+        # Create installation directory
+        install_path = f'/opt/gameservers/{name.lower().replace(" ", "_")}'
+        
+        # Create the game server
+        game_server = GameServer(
+            name=name,
+            game_type='docker',  # Special type for Docker-based servers
+            server_port=server_port,
+            max_players=max_players,
+            auto_start=auto_start,
+            install_path=install_path,
+            host_id=host.id,
+            status='installing'  # Set initial status
+        )
+        
+        db.session.add(game_server)
+        db.session.commit()
+        
+        # Create Docker Compose configuration
+        config = GameConfig(
+            name='docker-compose.yml',
+            file_path=f'{install_path}/docker-compose.yml',
+            file_type='yaml',
+            content=docker_compose_content,
+            is_active=True,
+            game_server_id=game_server.id
+        )
+        
+        db.session.add(config)
+        db.session.commit()
+        
+        # TODO: Trigger async task to set up Docker environment
+        
+        flash(f'Docker-based game server "{name}" created successfully!', 'success')
+        return redirect(url_for('hosts.show', id=host.id))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating Docker game server: {str(e)}")
+        flash('Error creating game server: ' + str(e), 'danger')
+        return redirect(url_for('hosts.show', id=host.id))
+
+@game_servers_bp.route('/hosts/<int:host_id>/servers/java', methods=['POST'])
+@login_required
+def create_from_java(host_id):
+    """Create a new game server from Java configuration."""
+    host = Host.query.get_or_404(host_id)
+    
+    # Security check - only allow access to own hosts
+    if host.user_id != current_user.id:
+        flash('You do not have permission to add game servers to this host.', 'danger')
+        return redirect(url_for('hosts.index'))
+    
+    try:
+        name = request.form.get('name')
+        server_port = request.form.get('server_port', type=int)
+        max_players = request.form.get('max_players', type=int)
+        auto_start = bool(request.form.get('auto_start'))
+        java_version = request.form.get('java_version')
+        memory = request.form.get('memory', type=int)
+        
+        if not name or not server_port or not max_players or not java_version or not memory:
+            flash('All fields are required!', 'danger')
+            return redirect(url_for('hosts.show', id=host.id))
+        
+        # Handle server.properties file upload
+        if 'server_properties' not in request.files:
+            flash('Server properties file is required!', 'danger')
+            return redirect(url_for('hosts.show', id=host.id))
+            
+        properties_file = request.files['server_properties']
+        if properties_file.filename == '':
+            flash('No selected file!', 'danger')
+            return redirect(url_for('hosts.show', id=host.id))
+            
+        # Read and validate server.properties
+        properties_content = properties_file.read().decode('utf-8')
+        
+        # Create installation directory
+        install_path = f'/opt/gameservers/{name.lower().replace(" ", "_")}'
+        
+        # Create the game server
+        game_server = GameServer(
+            name=name,
+            game_type='minecraft',  # Assuming Java-based servers are Minecraft
+            server_port=server_port,
+            max_players=max_players,
+            auto_start=auto_start,
+            install_path=install_path,
+            host_id=host.id,
+            status='installing'  # Set initial status
+        )
+        
+        db.session.add(game_server)
+        db.session.commit()
+        
+        # Create server.properties configuration
+        config = GameConfig(
+            name='server.properties',
+            file_path=f'{install_path}/server.properties',
+            file_type='properties',
+            content=properties_content,
+            is_active=True,
+            game_server_id=game_server.id
+        )
+        
+        db.session.add(config)
+        
+        # Create Java configuration
+        java_config = {
+            'version': java_version,
+            'memory': memory,
+            'args': [
+                f'-Xmx{memory}G',
+                f'-Xms{memory}G',
+                '-XX:+UseG1GC',
+                '-XX:+ParallelRefProcEnabled',
+                '-XX:MaxGCPauseMillis=200',
+                '-XX:+UnlockExperimentalVMOptions',
+                '-XX:+DisableExplicitGC',
+                '-XX:+AlwaysPreTouch',
+                '-XX:G1NewSizePercent=30',
+                '-XX:G1MaxNewSizePercent=40',
+                '-XX:G1HeapRegionSize=8M',
+                '-XX:G1ReservePercent=20',
+                '-XX:G1HeapWastePercent=5',
+                '-XX:G1MixedGCCountTarget=4',
+                '-XX:InitiatingHeapOccupancyPercent=15',
+                '-XX:G1MixedGCLiveThresholdPercent=90',
+                '-XX:G1RSetUpdatingPauseTimePercent=5',
+                '-XX:SurvivorRatio=32',
+                '-XX:+PerfDisableSharedMem',
+                '-XX:MaxTenuringThreshold=1'
+            ]
+        }
+        
+        java_settings = GameConfig(
+            name='java_settings.json',
+            file_path=f'{install_path}/java_settings.json',
+            file_type='json',
+            content=json.dumps(java_config, indent=2),
+            is_active=True,
+            game_server_id=game_server.id
+        )
+        
+        db.session.add(java_settings)
+        db.session.commit()
+        
+        # TODO: Trigger async task to download and set up Java environment
+        
+        flash(f'Java-based game server "{name}" created successfully!', 'success')
+        return redirect(url_for('hosts.show', id=host.id))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating Java game server: {str(e)}")
+        flash('Error creating game server: ' + str(e), 'danger')
+        return redirect(url_for('hosts.show', id=host.id)) 

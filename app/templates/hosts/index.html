@@ -29,113 +29,112 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">My Hosts</h1>
-        <a href="{{ url_for('hosts.new') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add New Host
-        </a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">My Hosts</h1>
+    <a href="{{ url_for('hosts.new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add New Host
+    </a>
+</div>
 
-    {% if hosts %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        {% for host in hosts %}
-        <div class="col">
-            <div class="card h-100 host-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <span class="status-indicator status-{{ host.status }}"></span>
-                        {{ host.name }}
-                    </h5>
-                    <span class="badge bg-{{ 'success' if host.status == 'online' else 'danger' if host.status == 'offline' else 'warning' }}">
-                        {{ host.status }}
-                    </span>
-                </div>
-                <div class="card-body">
-                    <p class="card-text"><strong>Address:</strong> {{ host.address }}{% if host.port != 22 %}:{{ host.port }}{% endif %}</p>
-                    {% if host.description %}
-                    <p class="card-text text-muted">{{ host.description|truncate(100) }}</p>
-                    {% endif %}
-                    <p class="card-text">
-                        <small class="text-muted">
-                            <strong>Game Servers:</strong> {{ host.game_servers.count() }}
-                        </small>
-                    </p>
-                </div>
-                <div class="card-footer">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-info check-status-btn me-2" data-host-id="{{ host.id }}">
-                                <i class="bi bi-arrow-repeat"></i> Check
-                            </button>
-                            <a href="{{ url_for('hosts.show', id=host.id) }}" class="btn btn-sm btn-outline-primary me-2">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                            <a href="ssh://{{ host.address }}:{{ host.port }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-terminal"></i> SSH
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    data-bs-toggle="modal" data-bs-target="#deleteHostModal{{ host.id }}">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
+{% if hosts %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for host in hosts %}
+    <div class="col">
+        <div class="card h-100 host-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <span class="status-indicator status-{{ host.status }}"></span>
+                    {{ host.name }}
+                </h5>
+                <span class="badge bg-{{ 'success' if host.status == 'online' else 'danger' if host.status == 'offline' else 'warning' }}">
+                    {{ host.status }}
+                </span>
             </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteHostModal{{ host.id }}" tabindex="-1" aria-labelledby="deleteHostModalLabel{{ host.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteHostModalLabel{{ host.id }}">Confirm Deletion</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="card-body">
+                <p class="card-text"><strong>Address:</strong> {{ host.address }}{% if host.port != 22 %}:{{ host.port }}{% endif %}</p>
+                {% if host.description %}
+                <p class="card-text text-muted">{{ host.description|truncate(100) }}</p>
+                {% endif %}
+                <p class="card-text">
+                    <small class="text-muted">
+                        <strong>Game Servers:</strong> {{ host.game_servers.count() }}
+                    </small>
+                </p>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-info check-status-btn" data-host-id="{{ host.id }}">
+                            <i class="bi bi-arrow-repeat"></i> Check
+                        </button>
+                        <a href="{{ url_for('hosts.show', id=host.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <a href="ssh://{{ host.address }}:{{ host.port }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-terminal"></i> SSH
+                        </a>
                     </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete the host <strong>{{ host.name }}</strong>?
-                        <p class="text-danger mt-2">
-                            <i class="bi bi-exclamation-triangle"></i> This will also delete all associated game servers and configurations.
-                        </p>
+                    <div class="btn-group">
+                        <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-host-btn" data-host-id="{{ host.id }}">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                <div class="delete-confirmation" id="deleteConfirmation{{ host.id }}">
+                    <p>Are you sure you want to delete <strong>{{ host.name }}</strong>?</p>
+                    <p class="warning-text">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        This will also delete all associated game servers and configurations.
+                    </p>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-secondary cancel-delete-btn" data-host-id="{{ host.id }}">
+                            Cancel
+                        </button>
                         <form action="{{ url_for('hosts.delete', id=host.id) }}" method="POST" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-danger">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-danger">Confirm Delete</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-    {% else %}
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <h3 class="text-muted mb-4">No hosts found</h3>
-            <p>You haven't added any hosts yet. Add a host to get started.</p>
-            <a href="{{ url_for('hosts.new') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Add Your First Host
-            </a>
-        </div>
-    </div>
-    {% endif %}
+    {% endfor %}
 </div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <h3 class="text-muted mb-4">No hosts found</h3>
+        <p>You haven't added any hosts yet. Add a host to get started.</p>
+        <a href="{{ url_for('hosts.new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Your First Host
+        </a>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Bootstrap tooltips initialization
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        // Delete confirmation handling
+        document.querySelectorAll('.delete-host-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const hostId = this.getAttribute('data-host-id');
+                const confirmation = document.getElementById(`deleteConfirmation${hostId}`);
+                confirmation.classList.add('show');
+            });
+        });
+
+        document.querySelectorAll('.cancel-delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const hostId = this.getAttribute('data-host-id');
+                const confirmation = document.getElementById(`deleteConfirmation${hostId}`);
+                confirmation.classList.remove('show');
+            });
         });
 
         // Check host status

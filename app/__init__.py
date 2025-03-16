@@ -1,9 +1,11 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_session import Session
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 from dotenv import load_dotenv
 
@@ -21,10 +23,27 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 migrate = Migrate()
 session = Session()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 def create_app(config_class=None):
     # Create and configure the app
     app = Flask(__name__)
+    
+    # Initialize limiter
+    limiter.init_app(app)
+    
+    # Apply rate limits to specific endpoints
+    @app.before_request
+    def apply_rate_limits():
+        if request.endpoint:
+            if 'auth.' in request.endpoint:
+                limiter.limit("5 per minute")(lambda: None)()
+            elif 'hosts.check_host_status' in request.endpoint:
+                limiter.limit("10 per minute")(lambda: None)()
     
     # Configure the app
     if config_class is None:
@@ -36,8 +55,18 @@ def create_app(config_class=None):
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_PERMANENT'] = False
     app.config['SESSION_USE_SIGNER'] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+    app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minutes
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+    
+    # Security headers
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+        return response
     
     # OAuth configuration
     app.config['GOOGLE_OAUTH_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID')

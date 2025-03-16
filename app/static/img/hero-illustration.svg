@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background Grid -->
+    <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#f8f9fa" stroke-width="1"/>
+        </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3"/>
+
+    <!-- Server Racks -->
+    <g transform="translate(200, 100)">
+        <!-- Server Rack 1 -->
+        <rect x="0" y="0" width="200" height="400" rx="10" fill="#e3f2fd" stroke="#90caf9" stroke-width="2"/>
+        <g id="servers1">
+            <rect x="20" y="40" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="100" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="160" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="220" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="280" width="160" height="40" rx="5" fill="#1976d2"/>
+            <!-- Server LEDs -->
+            <circle cx="40" cy="60" r="5" fill="#4caf50"/>
+            <circle cx="40" cy="120" r="5" fill="#4caf50"/>
+            <circle cx="40" cy="180" r="5" fill="#ffc107"/>
+            <circle cx="40" cy="240" r="5" fill="#4caf50"/>
+            <circle cx="40" cy="300" r="5" fill="#4caf50"/>
+        </g>
+    </g>
+
+    <!-- Server Rack 2 -->
+    <g transform="translate(450, 150)">
+        <rect x="0" y="0" width="200" height="300" rx="10" fill="#e3f2fd" stroke="#90caf9" stroke-width="2"/>
+        <g id="servers2">
+            <rect x="20" y="40" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="100" width="160" height="40" rx="5" fill="#1976d2"/>
+            <rect x="20" y="160" width="160" height="40" rx="5" fill="#1976d2"/>
+            <!-- Server LEDs -->
+            <circle cx="40" cy="60" r="5" fill="#4caf50"/>
+            <circle cx="40" cy="120" r="5" fill="#ffc107"/>
+            <circle cx="40" cy="180" r="5" fill="#4caf50"/>
+        </g>
+    </g>
+
+    <!-- Connection Lines -->
+    <g stroke="#90caf9" stroke-width="2" stroke-dasharray="5,5">
+        <path d="M 400 300 C 450 300, 400 200, 450 200" fill="none"/>
+        <path d="M 400 250 C 450 250, 400 150, 450 150" fill="none"/>
+    </g>
+
+    <!-- Floating Icons -->
+    <g fill="#1976d2">
+        <circle cx="150" cy="150" r="20" opacity="0.2"/>
+        <circle cx="650" cy="250" r="15" opacity="0.2"/>
+        <circle cx="350" cy="450" r="25" opacity="0.2"/>
+    </g>
+</svg> 
