@@ -1,96 +1,155 @@
-# Python Web Application
+# Hive.Overviewer
 
-A modern web application built with Python and Flask.
-
-## Project Structure
-
-```
-.
-├── app/                    # Application package
-│   ├── __init__.py         # Package initializer
-│   ├── controllers/        # Route handlers/controllers
-│   │   ├── __init__.py
-│   │   ├── auth.py         # Authentication routes
-│   │   └── main.py         # Main routes
-│   ├── models/             # Database models
-│   │   ├── __init__.py
-│   │   └── user.py         # User model
-│   ├── static/             # Static files
-│   │   ├── css/
-│   │   │   └── styles.css  # Custom CSS
-│   │   ├── js/
-│   │   │   └── main.js     # Custom JavaScript
-│   │   └── img/            # Images directory
-│   ├── templates/          # HTML templates
-│   │   ├── auth/
-│   │   │   ├── login.html  # Login page template
-│   │   │   └── register.html # Registration page template
-│   │   ├── about.html      # About page template
-│   │   ├── index.html      # Home page template
-│   │   └── layout.html     # Base layout template
-│   └── utils/              # Utility functions
-│       └── __init__.py
-├── config/                 # Configuration files
-│   └── __init__.py         # Configuration settings
-├── docs/                   # Documentation
-├── tests/                  # Test cases
-│   └── __init__.py
-├── .env.example            # Example environment variables
-├── .gitignore              # Git ignore file
-├── README.md               # Project documentation
-├── requirements.txt        # Project dependencies
-└── run.py                  # Application entry point
-```
+A web application for managing game servers and their configurations.
 
 ## Features
 
-- User authentication (login/register)
-- Google OAuth integration
-- Responsive design with Bootstrap
-- Database integration with SQLAlchemy
-- CSRF protection
-- Modular structure with Blueprints
+- Manage multiple host servers
+- Configure and monitor game servers
+- Deploy and manage game configuration files
+- User authentication and authorization
 
-## Setup
+## Docker Deployment
 
-1. Clone this repository
-2. Create a virtual environment:
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-4. Copy `.env.example` to `.env` and update the variables:
-   ```
-   cp .env.example .env
-   ```
-5. Set up Google OAuth (optional):
-   - Follow the instructions in `docs/google_oauth_setup.md`
-   - Update the Google OAuth client ID and secret in your `.env` file
-6. Initialize the database:
-   ```
-   python -c "from app import db, create_app; app = create_app(); app.app_context().push(); db.create_all()"
-   ```
-7. Run the application:
-   ```
-   python run.py
-   ```
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### Quick Start
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd hive.overviewer
+```
+
+2. Build and start the application:
+
+```bash
+docker-compose up -d
+```
+
+The application will be available at http://localhost:5000
+
+3. View logs:
+
+```bash
+docker-compose logs -f
+```
+
+### Environment Variables
+
+You can customize the application behavior through environment variables in the `docker-compose.yml` file:
+
+- `FLASK_ENV`: Set to `development` or `production`
+- `SECRET_KEY`: Secret key for session management (change for production)
+- `DATABASE_URL`: Database connection string
+- `GOOGLE_CLIENT_ID`: Your Google OAuth client ID (if using Google auth)
+- `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret (if using Google auth)
+
+### Production Deployment
+
+For production deployment, modify the `docker-compose.yml` file:
+
+```yaml
+environment:
+  - FLASK_ENV=production
+  - OAUTHLIB_INSECURE_TRANSPORT=0  # Remove this line in production
+  - APP_SETTINGS=config.ProductionConfig
+  - SECRET_KEY=<your-secure-secret-key>
+```
+
+Consider setting up a proper database like PostgreSQL for production:
+
+```yaml
+services:
+  web:
+    # ... existing configuration ...
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/hive_overviewer
+    depends_on:
+      - db
+  
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hive_overviewer
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+## Manual Setup (without Docker)
+
+### Prerequisites
+
+- Python 3.12+
+- pip
+- virtualenv
+
+### Installation
+
+1. Create and activate a virtual environment:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+
+```bash
+export FLASK_APP=app
+export FLASK_ENV=development
+```
+
+On Windows:
+```cmd
+set FLASK_APP=app
+set FLASK_ENV=development
+```
+
+4. Initialize the database:
+
+```bash
+flask db upgrade
+```
+
+5. Run the application:
+
+```bash
+flask run
+```
 
 ## Development
 
-- Add your models in `app/models/`
-- Add your route handlers in `app/controllers/`
-- Add your HTML templates in `app/templates/`
-- Add your static files in `app/static/`
+### Database Migrations
 
-## Authentication
+When you make changes to the models:
 
-The application supports two authentication methods:
+```bash
+flask db migrate -m "Description of changes"
+flask db upgrade
+```
 
-1. **Traditional email/password authentication**
-2. **Google OAuth authentication**
+### Testing
 
-Users can register and log in using either method. If a user signs in with Google and their email already exists in the system, their account will be linked to their Google ID for future sign-ins.
+```bash
+pytest
+```
+
+## License
+
+[MIT License](LICENSE)

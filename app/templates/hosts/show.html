@@ -37,6 +37,149 @@
         transform: translateY(-3px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
+    .status-data {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .status-data i {
+        width: 20px;
+        color: #0d6efd;
+        margin-right: 0.5rem;
+    }
+    .status-data p {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+    }
+    .status-data p:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    .status-data p:last-child {
+        margin-bottom: 0;
+    }
+    .status-data .player-stats {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .status-data .player-stat {
+        background-color: rgba(13, 110, 253, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        flex: 1;
+    }
+    .status-data .player-stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    .status-data .player-stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    .status-data .player-list {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background-color: rgba(0,0,0,0.03);
+        border-radius: 0.25rem;
+        font-size: 0.85rem;
+    }
+    .status-data .player-list-header {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    .status-data .no-players {
+        color: #6c757d;
+        font-style: italic;
+    }
+    .status-data .status-label {
+        color: #6c757d;
+        min-width: 80px;
+        margin-right: 0.5rem;
+    }
+    .status-data .status-value {
+        color: #212529;
+        font-weight: 500;
+    }
+    .host-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .host-actions .btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .host-actions .btn {
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .host-actions .btn i {
+        font-size: 1.1rem;
+    }
+    
+    .host-card {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .host-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem;
+    }
+    
+    .host-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .host-card .card-footer {
+        background-color: #fff;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem;
+    }
+    
+    .host-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+    
+    .host-details dl {
+        margin-bottom: 0;
+    }
+    
+    .host-details dt {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .host-details dd {
+        margin-bottom: 0.75rem;
+    }
+    
+    .host-details dd:last-child {
+        margin-bottom: 0;
+    }
 </style>
 {% endblock %}
 
@@ -51,64 +194,74 @@
     </nav>
 
     <!-- Host Details Card -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0">
-                    <span class="status-indicator status-{{ host.status }}"></span>
-                    {{ host.name }}
-                </h1>
-            </div>
-            <div>
-                <span class="badge bg-{{ 'success' if host.status == 'online' else 'danger' if host.status == 'offline' else 'warning' }}">
-                    {{ host.status }}
-                </span>
+    <div class="host-card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <span class="status-indicator status-{{ host.status }}"></span>
+                        {{ host.name }}
+                    </h1>
+                </div>
+                <div>
+                    <span class="badge bg-{{ 'success' if host.status == 'online' else 'danger' if host.status == 'offline' else 'warning' }} px-3 py-2">
+                        {{ host.status }}
+                    </span>
+                </div>
             </div>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <dl class="row">
-                        <dt class="col-sm-4">Address:</dt>
-                        <dd class="col-sm-8">{{ host.address }}{% if host.port != 22 %}:{{ host.port }}{% endif %}</dd>
+            <div class="host-details">
+                <div>
+                    <dl>
+                        <dt>Address</dt>
+                        <dd>{{ host.address }}{% if host.port != 22 %}:{{ host.port }}{% endif %}</dd>
                         
-                        <dt class="col-sm-4">SSH Port:</dt>
-                        <dd class="col-sm-8">{{ host.port }}</dd>
+                        <dt>SSH Port</dt>
+                        <dd>{{ host.port }}</dd>
                         
-                        <dt class="col-sm-4">Created:</dt>
-                        <dd class="col-sm-8">{{ host.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                        <dt>Created</dt>
+                        <dd>{{ host.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
                         
-                        <dt class="col-sm-4">Last Updated:</dt>
-                        <dd class="col-sm-8">{{ host.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                        <dt>Last Updated</dt>
+                        <dd>{{ host.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
                     </dl>
                 </div>
-                <div class="col-md-6">
-                    {% if host.description %}
-                    <h5>Description</h5>
-                    <p>{{ host.description }}</p>
-                    {% endif %}
+                {% if host.description %}
+                <div>
+                    <h5 class="mb-3">Description</h5>
+                    <p class="mb-0">{{ host.description }}</p>
                 </div>
+                {% endif %}
             </div>
         </div>
-        <div class="card-footer d-flex justify-content-between">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm btn-outline-success update-status-btn" data-status="online" data-host-id="{{ host.id }}">
-                    <i class="bi bi-check-circle"></i> Mark Online
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger update-status-btn" data-status="offline" data-host-id="{{ host.id }}">
-                    <i class="bi bi-x-circle"></i> Mark Offline
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning update-status-btn" data-status="maintenance" data-host-id="{{ host.id }}">
-                    <i class="bi bi-tools"></i> Mark Maintenance
-                </button>
-            </div>
-            <div>
-                <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i> Edit Host
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteHostModal">
-                    <i class="bi bi-trash"></i> Delete Host
-                </button>
+        <div class="card-footer">
+            <div class="host-actions">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-info check-status-btn" data-host-id="{{ host.id }}">
+                        <i class="bi bi-arrow-repeat"></i> Check Status
+                    </button>
+                    <button type="button" class="btn btn-outline-success update-status-btn" data-status="online" data-host-id="{{ host.id }}">
+                        <i class="bi bi-check-circle"></i> Mark Online
+                    </button>
+                    <button type="button" class="btn btn-outline-danger update-status-btn" data-status="offline" data-host-id="{{ host.id }}">
+                        <i class="bi bi-x-circle"></i> Mark Offline
+                    </button>
+                    <button type="button" class="btn btn-outline-warning update-status-btn" data-status="maintenance" data-host-id="{{ host.id }}">
+                        <i class="bi bi-tools"></i> Mark Maintenance
+                    </button>
+                </div>
+                <div class="btn-group">
+                    <a href="ssh://{{ host.address }}:{{ host.port }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-terminal"></i> SSH
+                    </a>
+                    <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Host
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteHostModal">
+                        <i class="bi bi-trash"></i> Delete Host
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -157,6 +310,68 @@
                         <dt class="col-6">Configs:</dt>
                         <dd class="col-6">{{ server.configs.count() }}</dd>
                     </dl>
+
+                    {% if server.status_data %}
+                    <hr>
+                    <div class="status-data">
+                        {% if server.status_data.players %}
+                        <p>
+                            <i class="bi bi-people-fill"></i>
+                            <span class="status-label">Players</span>
+                            <div class="player-stats">
+                                <div class="player-stat">
+                                    <span class="player-stat-label">Online</span>
+                                    <span class="player-stat-value">{{ server.status_data.players.online }}</span>
+                                </div>
+                                <div class="player-stat">
+                                    <span class="player-stat-label">Maximum</span>
+                                    <span class="player-stat-value">{{ server.status_data.players.max }}</span>
+                                </div>
+                            </div>
+                            <div class="player-list">
+                                <div class="player-list-header">Player List:</div>
+                                {% if server.status_data.players.list %}
+                                    {{ server.status_data.players.list|join(', ') }}
+                                {% else %}
+                                    <span class="no-players">No players online</span>
+                                {% endif %}
+                            </div>
+                        </p>
+                        {% endif %}
+
+                        {% if server.status_data.version %}
+                        <p>
+                            <i class="bi bi-hdd-stack"></i>
+                            <span class="status-label">Version:</span>
+                            <span class="status-value">{{ server.status_data.version }}</span>
+                        </p>
+                        {% endif %}
+
+                        {% if server.status_data.description %}
+                        <p>
+                            <i class="bi bi-chat-square-quote"></i>
+                            <span class="status-label">MOTD:</span>
+                            <span class="status-value">{{ server.status_data.description }}</span>
+                        </p>
+                        {% endif %}
+
+                        {% if server.status_data.map %}
+                        <p>
+                            <i class="bi bi-map"></i>
+                            <span class="status-label">Map:</span>
+                            <span class="status-value">{{ server.status_data.map }}</span>
+                        </p>
+                        {% endif %}
+
+                        {% if server.status_data.plugins %}
+                        <p>
+                            <i class="bi bi-puzzle"></i>
+                            <span class="status-label">Plugins:</span>
+                            <span class="status-value">{{ server.status_data.plugins|length }}</span>
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="card-footer">
                     <div class="row">
@@ -188,11 +403,6 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a href="{{ url_for('game_servers.edit', id=server.id) }}" class="dropdown-item">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </a>
-                                    </li>
-                                    <li>
                                         <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteServerModal{{ server.id }}">
                                             <i class="bi bi-trash"></i> Delete
                                         </button>
@@ -205,7 +415,7 @@
             </div>
         </div>
 
-        <!-- Delete Game Server Modal -->
+        <!-- Delete Server Modal -->
         <div class="modal fade" id="deleteServerModal{{ server.id }}" tabindex="-1" aria-labelledby="deleteServerModalLabel{{ server.id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -302,6 +512,46 @@
                 });
             });
         });
+        
+        // Check host status
+        const checkStatusBtn = document.querySelector('.check-status-btn');
+        if (checkStatusBtn) {
+            checkStatusBtn.addEventListener('click', function() {
+                const hostId = this.getAttribute('data-host-id');
+                const originalText = this.innerHTML;
+                
+                // Disable button and show loading state
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Checking...';
+                
+                fetch(`/hosts/${hostId}/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show status message
+                        alert(data.message);
+                        // Refresh the page to show the updated status
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while checking host status.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                });
+            });
+        }
         
         // Game server control (start, stop, restart)
         const serverControlBtns = document.querySelectorAll('.server-control-btn');

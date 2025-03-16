@@ -260,4 +260,31 @@ def control(id):
         })
     except Exception as e:
         current_app.logger.error(f"Error controlling game server: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error during {action} operation'}), 500 
+        return jsonify({'success': False, 'message': f'Error during {action} operation'}), 500
+
+@game_servers_bp.route('/servers/<int:id>/check', methods=['POST'])
+@login_required
+def check_status(id):
+    """Check the actual status of a game server."""
+    game_server = GameServer.query.get_or_404(id)
+    host = Host.query.get_or_404(game_server.host_id)
+    
+    # Security check - only allow access to own hosts
+    if host.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Permission denied'}), 403
+    
+    try:
+        # Check game server status
+        is_running, message, status_data = game_server.check_status()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'status': game_server.status,
+            'message': message,
+            'status_data': status_data,
+            'is_running': is_running
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error checking game server status: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while checking server status'}), 500 

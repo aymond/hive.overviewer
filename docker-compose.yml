@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: hive-overviewer
+    volumes:
+      - ./instance:/app/instance
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app
+      - FLASK_ENV=development
+      - OAUTHLIB_INSECURE_TRANSPORT=1
+      - APP_SETTINGS=config.DevelopmentConfig
+      - SECRET_KEY=dev-secret-change-in-production
+      - DATABASE_URL=sqlite:///instance/app.db
+    restart: unless-stopped 

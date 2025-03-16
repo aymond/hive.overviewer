@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models.host import Host
 from app.models.game_server import GameServer
+from app.utils.network import check_host_status
 import json
 
 hosts_bp = Blueprint('hosts', __name__)
@@ -125,4 +126,27 @@ def update_status(id):
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         current_app.logger.error(f"Error updating host status: {str(e)}")
-        return jsonify({'success': False, 'message': 'An error occurred'}), 500 
+        return jsonify({'success': False, 'message': 'An error occurred'}), 500
+
+@hosts_bp.route('/hosts/<int:id>/check', methods=['POST'])
+@login_required
+def check_host_status(id):
+    """Check the actual status of a host."""
+    host = Host.query.get_or_404(id)
+    
+    # Security check - only allow access to own hosts
+    if host.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Permission denied'}), 403
+    
+    try:
+        is_online = host.check_status()
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'status': host.status,
+            'message': host.status_message,
+            'is_online': is_online
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error checking host status: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while checking host status'}), 500 

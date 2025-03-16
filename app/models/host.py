@@ -1,5 +1,7 @@
 from app import db
 from datetime import datetime
+from app.utils.network import check_host_status
+from typing import Tuple
 
 class Host(db.Model):
     """Model for storing host information (physical or virtual servers)."""
@@ -11,6 +13,7 @@ class Host(db.Model):
     port = db.Column(db.Integer, default=22)
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='offline')  # online, offline, maintenance
+    status_message = db.Column(db.String(120), nullable=True)  # Detailed status message
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -30,12 +33,30 @@ class Host(db.Model):
         self.user_id = user_id
     
     def update_status(self, status):
-        """Update host status."""
+        """Update host status manually."""
         valid_statuses = ['online', 'offline', 'maintenance']
         if status not in valid_statuses:
             raise ValueError(f"Invalid status: {status}. Must be one of: {', '.join(valid_statuses)}")
         self.status = status
         self.updated_at = datetime.utcnow()
+    
+    def check_status(self) -> Tuple[bool, str]:
+        """
+        Check the actual status of the host using network utilities.
+        Updates the host's status and status_message.
+        
+        Returns:
+            Tuple[bool, str]: (is_online, message)
+        """
+        is_online, message = check_host_status(self.address, self.port)
+        
+        # Don't update status if host is in maintenance
+        if self.status != 'maintenance':
+            self.status = 'online' if is_online else 'offline'
+            self.status_message = message
+            self.updated_at = datetime.utcnow()
+        
+        return is_online, message
     
     def to_dict(self):
         """Return host as dictionary."""
@@ -46,6 +67,7 @@ class Host(db.Model):
             'port': self.port,
             'description': self.description,
             'status': self.status,
+            'status_message': self.status_message,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user_id': self.user_id,
