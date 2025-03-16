@@ -18,7 +18,7 @@ black==23.12.1
 flake8==6.1.0
 Flask-Dance==7.0.0
 blinker==1.6.3
-requests==2.31.0
+requests==2.32.2
 oauthlib==3.2.2
 paramiko==3.4.1
 mcclient-lib==1.2.0
