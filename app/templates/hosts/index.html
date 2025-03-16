@@ -64,18 +64,10 @@
             <div class="card-footer">
                 <div class="d-flex">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-outline-info check-status-btn" data-host-id="{{ host.id }}">
-                            <i class="bi bi-arrow-repeat"></i> Check
-                        </button>
-                        <a href="{{ url_for('hosts.show', id=host.id) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> View
+                        <a href="{{ url_for('hosts.show', id=host.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> View Details
                         </a>
-                        <a href="ssh://{{ host.address }}:{{ host.port }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-terminal"></i> SSH
-                        </a>
-                    </div>
-                    <div class="btn-group">
-                        <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{{ url_for('hosts.edit', id=host.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-danger delete-host-btn" data-host-id="{{ host.id }}">
@@ -134,46 +126,6 @@
                 const hostId = this.getAttribute('data-host-id');
                 const confirmation = document.getElementById(`deleteConfirmation${hostId}`);
                 confirmation.classList.remove('show');
-            });
-        });
-
-        // Check host status
-        const checkStatusBtns = document.querySelectorAll('.check-status-btn');
-        checkStatusBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const hostId = this.getAttribute('data-host-id');
-                const originalText = this.innerHTML;
-                
-                // Disable button and show loading state
-                this.disabled = true;
-                this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Checking...';
-                
-                fetch(`/hosts/${hostId}/check`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show status message
-                        alert(data.message);
-                        // Refresh the page to show the updated status
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while checking host status.');
-                })
-                .finally(() => {
-                    // Reset button state
-                    this.disabled = false;
-                    this.innerHTML = originalText;
-                });
             });
         });
     });

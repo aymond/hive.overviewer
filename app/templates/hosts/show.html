@@ -180,6 +180,72 @@
     .host-details dd:last-child {
         margin-bottom: 0;
     }
+    .status-data .player-list table {
+        background-color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 0;
+    }
+    
+    .status-data .player-list th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #6c757d;
+        border-bottom-width: 1px;
+        padding: 0.5rem;
+    }
+    
+    .status-data .player-list td {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+    
+    .status-data .player-list tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .status-data .player-list i.bi-person-fill {
+        color: #0d6efd;
+        font-size: 0.9rem;
+    }
+    
+    .status-data .table-responsive {
+        margin: -0.5rem;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .server-card .card-header {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .server-card .card-header .card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        min-height: 24px;
+        max-width: calc(100% - 90px); /* Account for status badge and refresh button */
+    }
+
+    .server-card .card-header .card-title span.server-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .server-card .card-header .status-indicator {
+        flex-shrink: 0;
+    }
+
+    .server-card .card-header .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -238,9 +304,6 @@
         <div class="card-footer">
             <div class="host-actions">
                 <div class="btn-group">
-                    <button type="button" class="btn btn-outline-info check-status-btn" data-host-id="{{ host.id }}">
-                        <i class="bi bi-arrow-repeat"></i> Check Status
-                    </button>
                     <button type="button" class="btn btn-outline-success update-status-btn" data-status="online" data-host-id="{{ host.id }}">
                         <i class="bi bi-check-circle"></i> Mark Online
                     </button>
@@ -280,13 +343,18 @@
         <div class="col">
             <div class="card h-100 server-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
+                    <h5 class="card-title">
                         <span class="status-indicator status-{{ server.status }}"></span>
-                        {{ server.name }}
+                        <span class="server-name">{{ server.name }}</span>
                     </h5>
-                    <span class="badge bg-{{ 'success' if server.status == 'running' else 'danger' if server.status == 'stopped' else 'warning' }}">
-                        {{ server.status }}
-                    </span>
+                    <div class="header-actions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary refresh-status-btn" data-server-id="{{ server.id }}" title="Refresh Status">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <span class="badge bg-{{ 'success' if server.status == 'running' else 'danger' if server.status == 'stopped' else 'warning' }}">
+                            {{ server.status }}
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -327,14 +395,6 @@
                                     <span class="player-stat-label">Maximum</span>
                                     <span class="player-stat-value">{{ server.status_data.players.max }}</span>
                                 </div>
-                            </div>
-                            <div class="player-list">
-                                <div class="player-list-header">Player List:</div>
-                                {% if server.status_data.players.list %}
-                                    {{ server.status_data.players.list|join(', ') }}
-                                {% else %}
-                                    <span class="no-players">No players online</span>
-                                {% endif %}
                             </div>
                         </p>
                         {% endif %}
@@ -483,81 +543,131 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Update host status
-        const updateStatusBtns = document.querySelectorAll('.update-status-btn');
-        updateStatusBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const hostId = this.getAttribute('data-host-id');
-                const status = this.getAttribute('data-status');
-                
-                fetch(`/hosts/${hostId}/status`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ status: status }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Refresh the page to show the updated status
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
+        // Store intervals for cleanup
+        let statusUpdateIntervals = [];
+
+        // Function to update server status
+        function updateServerStatus(serverId) {
+            const serverCard = document.querySelector(`[data-server-id="${serverId}"]`).closest('.server-card');
+            const refreshBtn = serverCard.querySelector('.refresh-status-btn');
+            
+            if (refreshBtn) {
+                refreshBtn.querySelector('i').classList.add('bi-arrow-clockwise-animate');
+                refreshBtn.disabled = true;
+            }
+
+            fetch(`/servers/${serverId}/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update status badge
+                    const statusBadge = serverCard.querySelector('.badge');
+                    statusBadge.className = `badge bg-${data.status === 'running' ? 'success' : data.status === 'stopped' ? 'danger' : 'warning'}`;
+                    statusBadge.textContent = data.status;
+
+                    // Update status indicator
+                    const statusIndicator = serverCard.querySelector('.status-indicator');
+                    statusIndicator.className = `status-indicator status-${data.status}`;
+
+                    // Update status data if available
+                    if (data.status_data) {
+                        const statusData = serverCard.querySelector('.status-data');
+                        if (statusData) {
+                            // Update player count
+                            if (data.status_data.players) {
+                                const playerStats = statusData.querySelector('.player-stats');
+                                if (playerStats) {
+                                    const onlineValue = playerStats.querySelector('.player-stat:first-child .player-stat-value');
+                                    const maxValue = playerStats.querySelector('.player-stat:last-child .player-stat-value');
+                                    if (onlineValue) onlineValue.textContent = data.status_data.players.online;
+                                    if (maxValue) maxValue.textContent = data.status_data.players.max;
+                                }
+                            }
+
+                            // Update other status fields
+                            if (data.status_data.version) {
+                                const versionValue = statusData.querySelector('[data-field="version"] .status-value');
+                                if (versionValue) versionValue.textContent = data.status_data.version;
+                            }
+                            if (data.status_data.map) {
+                                const mapValue = statusData.querySelector('[data-field="map"] .status-value');
+                                if (mapValue) mapValue.textContent = data.status_data.map;
+                            }
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            });
-        });
-        
-        // Check host status
-        const checkStatusBtn = document.querySelector('.check-status-btn');
-        if (checkStatusBtn) {
-            checkStatusBtn.addEventListener('click', function() {
-                const hostId = this.getAttribute('data-host-id');
-                const originalText = this.innerHTML;
-                
-                // Disable button and show loading state
-                this.disabled = true;
-                this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Checking...';
-                
-                fetch(`/hosts/${hostId}/check`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show status message
-                        alert(data.message);
-                        // Refresh the page to show the updated status
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while checking host status.');
-                })
-                .finally(() => {
-                    // Reset button state
-                    this.disabled = false;
-                    this.innerHTML = originalText;
-                });
+                } else {
+                    console.error('Error updating status:', data.message);
+                }
+
+                // Re-enable refresh button
+                if (refreshBtn) {
+                    refreshBtn.querySelector('i').classList.remove('bi-arrow-clockwise-animate');
+                    refreshBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Re-enable refresh button on error
+                if (refreshBtn) {
+                    refreshBtn.querySelector('i').classList.remove('bi-arrow-clockwise-animate');
+                    refreshBtn.disabled = false;
+                }
             });
         }
-        
-        // Game server control (start, stop, restart)
+
+        // Set up periodic updates for each server
+        const serverCards = document.querySelectorAll('.server-card');
+        serverCards.forEach(card => {
+            const serverControlBtn = card.querySelector('.server-control-btn');
+            if (serverControlBtn) {
+                const serverId = serverControlBtn.getAttribute('data-server-id');
+                // Add random delay between 0-5 seconds to stagger initial checks
+                const initialDelay = Math.random() * 5000;
+                setTimeout(() => {
+                    // Initial update after random delay
+                    updateServerStatus(serverId);
+                    // Update every 30 seconds
+                    const intervalId = setInterval(() => updateServerStatus(serverId), 30000);
+                    statusUpdateIntervals.push(intervalId);
+                }, initialDelay);
+            }
+        });
+
+        // Cleanup intervals when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            statusUpdateIntervals.forEach(interval => clearInterval(interval));
+        });
+
+        // Add styles for refresh button animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .bi-arrow-clockwise-animate {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .refresh-status-btn {
+                padding: 0.25rem 0.5rem;
+                line-height: 1;
+            }
+            .refresh-status-btn i {
+                font-size: 1rem;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Server control buttons
         const serverControlBtns = document.querySelectorAll('.server-control-btn');
         serverControlBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-                const serverId = this.getAttribute('data-server-id');
                 const action = this.getAttribute('data-action');
                 
                 // Disable the button to prevent multiple clicks
@@ -567,8 +677,12 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ action: action }),
+                    body: JSON.stringify({ 
+                        action: action,
+                        csrf_token: '{{ csrf_token() }}'
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {

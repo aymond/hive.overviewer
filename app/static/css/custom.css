@@ -1,0 +1,9 @@
+/* Override Bootstrap's close button styles */
+.btn-close {
+    background: transparent url("../img/icons/close.svg") center/1em auto no-repeat !important;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+} 

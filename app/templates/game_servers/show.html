@@ -42,6 +42,57 @@
         padding: 0.75rem;
         margin-top: 0.5rem;
     }
+    .player-list {
+        margin-top: 1rem;
+    }
+    .player-list table {
+        width: 100%;
+        background-color: #fff;
+        border-radius: 0.25rem;
+        margin-bottom: 0;
+    }
+    .player-list th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #6c757d;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding: 0.75rem;
+    }
+    .player-list td {
+        padding: 0.75rem;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .player-list tr:last-child td {
+        border-bottom: none;
+    }
+    .player-list tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    .player-name {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .player-name i {
+        color: #0d6efd;
+        font-size: 1rem;
+    }
+    .player-id {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .last-seen {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .no-players {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+    }
 </style>
 {% endblock %}
 
@@ -127,7 +178,7 @@
                     <dl class="row mb-0">
                         {% if game_server.status_data.players is defined %}
                         <dt class="col-sm-4">Players Online:</dt>
-                        <dd class="col-sm-8">{{ game_server.status_data.players }}/{{ game_server.status_data.max_players }}</dd>
+                        <dd class="col-sm-8">{{ game_server.status_data.players.online }}/{{ game_server.status_data.players.max }}</dd>
                         {% endif %}
                         {% if game_server.status_data.version is defined %}
                         <dt class="col-sm-4">Version:</dt>
@@ -138,6 +189,43 @@
                         <dd class="col-sm-8">{{ game_server.status_data.description }}</dd>
                         {% endif %}
                     </dl>
+
+                    {% if game_server.status_data.players and game_server.status_data.players.list %}
+                    <div class="player-list">
+                        <h6 class="mb-3">Online Players</h6>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Player Name</th>
+                                        <th>ID</th>
+                                        <th>Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for player in game_server.status_data.players.list %}
+                                    <tr>
+                                        <td>
+                                            <div class="player-name">
+                                                <i class="bi bi-person-fill"></i>
+                                                {{ player.name }}
+                                            </div>
+                                        </td>
+                                        <td class="player-id">{{ player.id }}</td>
+                                        <td class="last-seen">{{ player.last_seen }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% elif game_server.status_data.players and game_server.status_data.players.online == 0 %}
+                    <div class="player-list">
+                        <div class="no-players">
+                            <i class="bi bi-people"></i> No players online
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -145,9 +233,6 @@
         </div>
         <div class="card-footer d-flex justify-content-between">
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm btn-outline-info check-status-btn" data-server-id="{{ game_server.id }}">
-                    <i class="bi bi-arrow-repeat"></i> Check Status
-                </button>
                 <button type="button" class="btn btn-sm btn-success server-control-btn" data-action="start" data-server-id="{{ game_server.id }}" {% if game_server.status == 'running' %}disabled{% endif %}>
                     <i class="bi bi-play-circle"></i> Start
                 </button>
@@ -312,22 +397,150 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Game server control (start, stop, restart)
+        // Store intervals for cleanup
+        let statusUpdateIntervals = [];
+
+        // Function to format date string
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        // Function to update server status data
+        function updateServerStatus() {
+            fetch(`/servers/{{ game_server.id }}/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update status badge
+                    const statusBadge = document.querySelector('.badge');
+                    statusBadge.className = `badge bg-${data.status === 'running' ? 'success' : data.status === 'stopped' ? 'danger' : 'warning'}`;
+                    statusBadge.textContent = data.status;
+
+                    // Update status indicator
+                    const statusIndicator = document.querySelector('.status-indicator');
+                    statusIndicator.className = `status-indicator status-${data.status}`;
+
+                    // Update status data if available
+                    if (data.status_data) {
+                        const statusData = document.querySelector('.status-data');
+                        if (statusData) {
+                            // Update player count
+                            if (data.status_data.players) {
+                                // Find the Players Online element by looking through all dt elements
+                                const dtElements = statusData.querySelectorAll('dt');
+                                dtElements.forEach(dt => {
+                                    if (dt.textContent.trim() === 'Players Online:') {
+                                        const dd = dt.nextElementSibling;
+                                        if (dd) {
+                                            dd.textContent = `${data.status_data.players.online}/${data.status_data.players.max}`;
+                                        }
+                                    }
+                                });
+
+                                // Update player list
+                                let playerListContainer = statusData.querySelector('.player-list');
+                                if (!playerListContainer) {
+                                    playerListContainer = document.createElement('div');
+                                    playerListContainer.className = 'player-list';
+                                    statusData.appendChild(playerListContainer);
+                                }
+
+                                if (data.status_data.players.list && data.status_data.players.list.length > 0) {
+                                    playerListContainer.innerHTML = `
+                                        <h6 class="mb-3">Online Players</h6>
+                                        <div class="table-responsive">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Player Name</th>
+                                                        <th>ID</th>
+                                                        <th>Last Seen</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${data.status_data.players.list.map(player => `
+                                                        <tr>
+                                                            <td>
+                                                                <div class="player-name">
+                                                                    <i class="bi bi-person-fill"></i>
+                                                                    ${player.name}
+                                                                </div>
+                                                            </td>
+                                                            <td class="player-id">${player.id}</td>
+                                                            <td class="last-seen">${formatDate(player.last_seen)}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `;
+                                } else {
+                                    playerListContainer.innerHTML = `
+                                        <div class="no-players">
+                                            <i class="bi bi-people"></i> No players online
+                                        </div>
+                                    `;
+                                }
+                            }
+
+                            // Update other status fields
+                            if (data.status_data.version) {
+                                const versionValue = statusData.querySelector('dd:nth-of-type(2)');
+                                if (versionValue) versionValue.textContent = data.status_data.version;
+                            }
+                            if (data.status_data.description) {
+                                const descriptionValue = statusData.querySelector('dd:nth-of-type(3)');
+                                if (descriptionValue) descriptionValue.textContent = data.status_data.description;
+                            }
+                        }
+                    }
+                } else {
+                    console.error('Error updating status:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Initial update
+        updateServerStatus();
+
+        // Update every 10 seconds
+        const intervalId = setInterval(updateServerStatus, 10000);
+        statusUpdateIntervals.push(intervalId);
+
+        // Cleanup intervals when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            statusUpdateIntervals.forEach(interval => clearInterval(interval));
+        });
+
+        // Server control buttons
         const serverControlBtns = document.querySelectorAll('.server-control-btn');
         serverControlBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-                const serverId = this.getAttribute('data-server-id');
                 const action = this.getAttribute('data-action');
                 
                 // Disable the button to prevent multiple clicks
                 this.disabled = true;
                 
-                fetch(`/servers/${serverId}/control`, {
+                fetch(`/servers/{{ game_server.id }}/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ action: action }),
+                    body: JSON.stringify({ 
+                        action: action,
+                        csrf_token: '{{ csrf_token() }}'
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -337,74 +550,6 @@
                         setTimeout(() => {
                             location.reload();
                         }, 1000);
-                    } else {
-                        alert('Error: ' + data.message);
-                        this.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                    this.disabled = false;
-                });
-            });
-        });
-        
-        // Config toggle active/inactive
-        const configToggleBtns = document.querySelectorAll('.config-toggle-btn');
-        configToggleBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const configId = this.getAttribute('data-config-id');
-                
-                // Disable the button to prevent multiple clicks
-                this.disabled = true;
-                
-                fetch(`/configs/${configId}/toggle`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show a notification and refresh
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                        this.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                    this.disabled = false;
-                });
-            });
-        });
-        
-        // Config deploy
-        const configDeployBtns = document.querySelectorAll('.config-deploy-btn');
-        configDeployBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const configId = this.getAttribute('data-config-id');
-                
-                // Disable the button to prevent multiple clicks
-                this.disabled = true;
-                
-                fetch(`/configs/${configId}/deploy`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show a notification
-                        alert(data.message);
-                        this.disabled = false;
                     } else {
                         alert('Error: ' + data.message);
                         this.disabled = false;
