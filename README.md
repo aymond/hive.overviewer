@@ -1,155 +1,78 @@
-# Hive.Overviewer
+# Hive Overviewer
 
-A web application for managing game servers and their configurations.
+A web application for managing and monitoring game servers.
+
+## Description
+
+Hive Overviewer is a modern web application that helps you manage and monitor multiple game servers across different hosts. It provides an intuitive interface for server management, configuration, and status monitoring.
 
 ## Features
 
-- Manage multiple host servers
-- Configure and monitor game servers
-- Deploy and manage game configuration files
+- Host management with status monitoring
+- Game server deployment and configuration
+- Real-time server status updates
+- Configuration file management
 - User authentication and authorization
+- Modern, responsive design
 
-## Docker Deployment
-
-### Prerequisites
-
-- Docker
-- Docker Compose
-
-### Quick Start
+## Installation
 
 1. Clone the repository:
-
 ```bash
-git clone <repository-url>
+git clone https://github.com/yourusername/hive.overviewer.git
 cd hive.overviewer
 ```
 
-2. Build and start the application:
-
-```bash
-docker-compose up -d
-```
-
-The application will be available at http://localhost:5000
-
-3. View logs:
-
-```bash
-docker-compose logs -f
-```
-
-### Environment Variables
-
-You can customize the application behavior through environment variables in the `docker-compose.yml` file:
-
-- `FLASK_ENV`: Set to `development` or `production`
-- `SECRET_KEY`: Secret key for session management (change for production)
-- `DATABASE_URL`: Database connection string
-- `GOOGLE_CLIENT_ID`: Your Google OAuth client ID (if using Google auth)
-- `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret (if using Google auth)
-
-### Production Deployment
-
-For production deployment, modify the `docker-compose.yml` file:
-
-```yaml
-environment:
-  - FLASK_ENV=production
-  - OAUTHLIB_INSECURE_TRANSPORT=0  # Remove this line in production
-  - APP_SETTINGS=config.ProductionConfig
-  - SECRET_KEY=<your-secure-secret-key>
-```
-
-Consider setting up a proper database like PostgreSQL for production:
-
-```yaml
-services:
-  web:
-    # ... existing configuration ...
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/hive_overviewer
-    depends_on:
-      - db
-  
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=hive_overviewer
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
-
-## Manual Setup (without Docker)
-
-### Prerequisites
-
-- Python 3.12+
-- pip
-- virtualenv
-
-### Installation
-
-1. Create and activate a virtual environment:
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-```
-
 2. Install dependencies:
-
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-
+3. Set up the environment variables:
 ```bash
-export FLASK_APP=app
-export FLASK_ENV=development
-```
-
-On Windows:
-```cmd
-set FLASK_APP=app
-set FLASK_ENV=development
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
 4. Initialize the database:
-
 ```bash
 flask db upgrade
 ```
 
 5. Run the application:
-
 ```bash
 flask run
 ```
 
-## Development
+## Usage
 
-### Database Migrations
+Visit `http://localhost:5000` in your web browser to access the application.
 
-When you make changes to the models:
+## Contributing
 
-```bash
-flask db migrate -m "Description of changes"
-flask db upgrade
-```
-
-### Testing
-
-```bash
-pytest
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Third-Party Licenses
+
+This project includes several third-party open source components:
+
+- **Bootstrap** (MIT License)
+  - Copyright (c) 2011-2024 The Bootstrap Authors
+  - https://getbootstrap.com
+  - Used for core CSS and JavaScript functionality
+
+- **Bootstrap Icons** (MIT License)
+  - Copyright (c) 2019-2024 The Bootstrap Authors
+  - https://icons.getbootstrap.com
+  - Used for iconography throughout the application
+
+For full license texts and notices, please see the [NOTICE](NOTICE) file.
+
+## Acknowledgments
+
+- Bootstrap team for their excellent framework and icons
+- All contributors who have helped with the project
